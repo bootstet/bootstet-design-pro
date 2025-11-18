@@ -104,6 +104,16 @@ const appConfig: SystemConfig = {
       iconColor: '#6B6B6B',
       textColor: '#29343D',
       img: configImages.menuStyles.light
+    },
+    {
+      // 雨天背景主题：颜色整体参考设计主题，主要用于触发 Three.js 下雨背景
+      theme: MenuThemeEnum.RAIN,
+      background: '#2f4a8fff',
+      systemNameColor: '#E5E7EB',
+      iconColor: '#9CA3AF',
+      textColor: '#E5E7EB',
+      // 这里暂时复用 design 预览图，后续可以替换为专门的“雨天”预览图
+      img: configImages.menuStyles.design
     }
   ],
   // 暗黑模式菜单样式

@@ -1,14 +1,19 @@
 .app-layout {
+  position: relative;
   display: flex;
   width: 100%;
   min-height: 100vh;
   background: var(--default-bg-color);
 
   #app-sidebar {
+    position: relative;
+    z-index: 1;
     flex-shrink: 0;
   }
 
   #app-main {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex: 1;
     flex-direction: column;
@@ -43,6 +48,11 @@
         }
       }
     }
+  }
+
+  #app-global {
+    position: relative;
+    z-index: 1;
   }
 }
 

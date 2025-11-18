@@ -49,7 +49,9 @@ export enum MenuThemeEnum {
   /** 亮色主题 */
   LIGHT = 'light',
   /** 设计主题 */
-  DESIGN = 'design'
+  DESIGN = 'design',
+  /** 雨天背景主题（Three.js 下雨效果） */
+  RAIN = 'rain'
 }
 
 /**

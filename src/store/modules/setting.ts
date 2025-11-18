@@ -131,6 +131,12 @@ export const useSettingStore = defineStore(
     })
 
     /**
+     * 是否为雨天背景主题
+     * 用于在布局中挂载 Three.js 下雨背景效果
+     */
+    const isRainTheme = computed(() => menuThemeType.value === MenuThemeEnum.RAIN)
+
+    /**
      * 判断是否为暗色模式
      */
     const isDark = computed((): boolean => {
@@ -406,6 +412,7 @@ export const useSettingStore = defineStore(
       dualMenuShowText,
       containerWidth,
       getMenuTheme,
+      isRainTheme,
       isDark,
       getMenuOpenWidth,
       getCustomRadius,
