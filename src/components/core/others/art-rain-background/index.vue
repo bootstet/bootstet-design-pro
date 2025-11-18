@@ -57,64 +57,64 @@
       ));
   }
 
-  // 雨滴层（含纵向拖尾 + 随机偏移）
+  // 雨滴层
   vec2 DropLayer2(vec2 uv, float t) {
-      uv.y += t * 0.32;                   // 速度再慢一点
-      vec2 grid = vec2(8.0, 1.2) * 2.0;   // x 方向更密、y 稍大
+      // uv.y += t * 0.75; // 控制雨滴下落速度
+      // 速度稍微减慢一点
+      uv.y += t * 0.35;
+
+      // vec2 grid = vec2(6.0, 1.0) * 2.0;
+
+      // 网格更密一点，雨滴更小更精致
+      vec2 grid = vec2(8.0, 1.0) * 2.0;
       vec2 id = floor(uv * grid);
       vec3 n = N13(id.x * 35.2 + id.y * 2376.1);
+      vec2 st = fract(uv * grid) - vec2(0.5, 0.0);
+      // float d = length((st - vec2(n.x - 0.5, n.y - 0.5)) * vec2(1.0, 1.5));
 
-      // 引入一点横向偏移，让雨滴略微左右晃
-      float offset = (n.z - 0.5) * 0.12;
-      vec2 st = fract(uv * grid) - vec2(0.5 + offset, 0.0);
+      // 改纵向拉伸比例，让雨滴更“长条”
+      float d = length((st - vec2(n.x - 0.5, n.y - 0.5)) * vec2(0.8, 2.0));
+      // return vec2(smoothstep(0.4, 0.0, d), 0.0);
 
-      // 纵向拉伸 + 轻微椭圆
-      vec2 stretch = vec2(0.75, 2.3);
-      float d = length((st - vec2(n.x - 0.5, n.y - 0.5)) * stretch);
-
-      // 让边缘柔和，核心更细
-      float dropMask = smoothstep(0.32, 0.0, d);
-
-      // 做一个纵向拖尾（模拟水痕）
-      float trail = smoothstep(-0.05, 0.3, st.y + 0.25) * dropMask;
-
-      return vec2(dropMask, trail);
-  }
-
-  // 对背景做个轻微模糊，模拟玻璃失焦
-  vec3 blurBackground(vec2 uv, sampler2D tex) {
-      vec2 px = 1.5 / iResolution.xy;
-      vec3 col = vec3(0.0);
-      col += texture2D(tex, uv + vec2(-px.x, -px.y)).rgb;
-      col += texture2D(tex, uv + vec2( px.x, -px.y)).rgb;
-      col += texture2D(tex, uv + vec2(-px.x,  px.y)).rgb;
-      col += texture2D(tex, uv + vec2( px.x,  px.y)).rgb;
-      col += 2.0 * texture2D(tex, uv).rgb;
-      return col / 6.0;
+      // 让边缘更柔和一点
+      return vec2(smoothstep(0.35, 0.0, d), 0.0);
   }
 
   void main() {
+      // vec2 uv = vUv;
+
+      // // 背景颜色
+      // vec3 bg = texture2D(iChannel0, uv).rgb;
+
+      // float t = iTime;
+      // vec2 drops = DropLayer2(uv, t);
+      // float mask = drops.x;
+
+      // // 简单高光混合：雨滴位置更亮
+      // vec3 color = mix(bg, vec3(1.0), mask);
+
+      // gl_FragColor = vec4(color, 1.0);
+
       vec2 uv = vUv;
 
-      vec3 bg = blurBackground(uv, iChannel0);
-      bg *= 0.88;
-      bg = mix(bg, vec3(0.82, 0.9, 1.0), 0.12); // 雨天偏冷
+      vec3 bg = texture2D(iChannel0, uv).rgb;
+
+      bg *= 0.9;
+      bg = mix(bg, vec3(0.85, 0.9, 1.0), 0.1);
 
       float t = iTime;
       vec2 drops = DropLayer2(uv, t);
       float mask = drops.x;
-      float trail = drops.y;
 
-      // Gamma 校正
-      float softMask = pow(mask, 1.25);
+      // 控制高光强度（0.0 ~ 1.0）
+      float intensity = 0.6;
+      // 高光颜色略微偏蓝
+      vec3 highlight = vec3(0.85, 0.9, 1.0);
 
-      float intensity = 0.65;
-      vec3 highlight = vec3(0.88, 0.93, 1.0);
+      // 先把雨滴 mask 做个 gamma 校正，让边缘更柔一点
+      float softMask = pow(mask, 1.3);
 
-      // 把拖尾当成额外的透明高光
-      float trailHighlight = trail * 0.45;
-
-      vec3 color = mix(bg, highlight, softMask * intensity + trailHighlight);
+      vec3 color = mix(bg, highlight, softMask * intensity);
 
       gl_FragColor = vec4(color, 1.0);
   }
