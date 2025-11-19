@@ -118,29 +118,31 @@ export const useSettingStore = defineStore(
     const festivalDate = ref('')
 
     /**
-     * 获取菜单主题
-     * 根据当前主题类型和暗色模式返回对应的主题配置
+     * 判断是否为暗色模式
      */
-    const getMenuTheme = computed((): MenuThemeType => {
-      const list = AppConfig.themeList.filter((item) => item.theme === menuThemeType.value)
-      if (isDark.value) {
-        return AppConfig.darkMenuStyles[0]
-      } else {
-        return list[0]
-      }
+    const isDark = computed((): boolean => {
+      return systemThemeType.value === SystemThemeEnum.DARK
     })
 
     /**
      * 是否为雨天背景主题
      * 用于在布局中挂载 Three.js 下雨背景效果
      */
-    const isRainTheme = computed(() => menuThemeType.value === MenuThemeEnum.RAIN)
+    const isRainTheme = computed(() => systemThemeType.value === SystemThemeEnum.RAIN)
 
     /**
-     * 判断是否为暗色模式
+     * 获取菜单主题
+     * 根据当前主题类型和暗色模式返回对应的主题配置
      */
-    const isDark = computed((): boolean => {
-      return systemThemeType.value === SystemThemeEnum.DARK
+    const getMenuTheme = computed((): MenuThemeType => {
+      // 雨天主题也使用暗色菜单样式（因为背景是深色）
+      if (isDark.value || isRainTheme.value) {
+        return AppConfig.darkMenuStyles[0]
+      } else {
+        const list = AppConfig.themeList.filter((item) => item.theme === menuThemeType.value)
+        // 如果找不到匹配的主题，使用第一个作为默认值（通常是 DESIGN）
+        return list[0]
+      }
     })
 
     /**

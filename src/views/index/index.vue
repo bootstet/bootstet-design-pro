@@ -6,7 +6,6 @@
     <aside id="app-sidebar">
       <ArtSidebarMenu />
     </aside>
-    <!-- 
     <main id="app-main">
       <div id="app-header">
         <ArtHeaderBar />
@@ -14,7 +13,7 @@
       <div id="app-content">
         <ArtPageContent />
       </div>
-    </main> -->
+    </main>
 
     <div id="app-global">
       <ArtGlobalComponent />

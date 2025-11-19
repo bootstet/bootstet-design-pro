@@ -27,6 +27,7 @@
   import { MenuTypeEnum, type MenuThemeEnum } from '@/enums/appEnum'
   import { useSettingStore } from '@/store/modules/setting'
 
+  // 菜单主题列表（雨天主题已移到系统主题中，这里只显示菜单风格）
   const menuThemeList = AppConfig.themeList
   const settingStore = useSettingStore()
   const { menuThemeType, menuType, isDark } = storeToRefs(settingStore)

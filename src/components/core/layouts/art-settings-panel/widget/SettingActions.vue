@@ -39,13 +39,13 @@
     systemTheme: {
       auto: 'SystemThemeEnum.AUTO',
       light: 'SystemThemeEnum.LIGHT',
-      dark: 'SystemThemeEnum.DARK'
+      dark: 'SystemThemeEnum.DARK',
+      rain: 'SystemThemeEnum.RAIN'
     },
     menuTheme: {
       design: 'MenuThemeEnum.DESIGN',
       light: 'MenuThemeEnum.LIGHT',
-      dark: 'MenuThemeEnum.DARK',
-      rain: 'MenuThemeEnum.RAIN'
+      dark: 'MenuThemeEnum.DARK'
     },
     containerWidth: {
       '100%': 'ContainerWidthEnum.FULL',

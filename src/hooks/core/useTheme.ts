@@ -76,6 +76,11 @@ export function useTheme() {
       el.setAttribute('class', currentTheme.className)
     }
 
+    // 雨天主题特殊处理：应用暗色样式（因为雨天背景是深色）
+    if (theme === SystemThemeEnum.RAIN) {
+      el.setAttribute('class', SystemThemeEnum.DARK)
+    }
+
     // 设置按钮颜色加深或变浅
     const primary = settingStore.systemThemeColor
 
@@ -110,6 +115,9 @@ export function useTheme() {
   const switchThemeStyles = (theme: SystemThemeEnum) => {
     if (theme === SystemThemeEnum.AUTO) {
       setSystemAutoTheme()
+    } else if (theme === SystemThemeEnum.RAIN) {
+      // 雨天主题：直接设置为雨天，但应用暗色样式
+      setSystemTheme(theme, theme)
     } else {
       setSystemTheme(theme)
     }
@@ -145,7 +153,12 @@ export function initializeTheme() {
     // 设置主题 class
     const currentTheme = AppConfig.systemThemeStyles[actualTheme as keyof SystemThemeTypes]
     if (currentTheme) {
-      el.setAttribute('class', currentTheme.className)
+      // 雨天主题应用暗色样式
+      if (actualTheme === SystemThemeEnum.RAIN) {
+        el.setAttribute('class', SystemThemeEnum.DARK)
+      } else {
+        el.setAttribute('class', currentTheme.className)
+      }
     }
 
     // 设置主题颜色

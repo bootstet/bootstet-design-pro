@@ -17,6 +17,7 @@
 import lightTheme from '@imgs/settings/theme_styles/light.png'
 import darkTheme from '@imgs/settings/theme_styles/dark.png'
 import systemTheme from '@imgs/settings/theme_styles/system.png'
+import rainTheme from '@imgs/settings/theme_styles/dark.png' // 暂时复用暗色主题图，后续可替换
 import verticalLayout from '@imgs/settings/menu_layouts/vertical.png'
 import horizontalLayout from '@imgs/settings/menu_layouts/horizontal.png'
 import mixedLayout from '@imgs/settings/menu_layouts/mixed.png'
@@ -36,7 +37,9 @@ export const configImages = {
     /** 暗色主题 */
     dark: darkTheme,
     /** 自动主题（跟随系统） */
-    system: systemTheme
+    system: systemTheme,
+    /** 雨天主题 */
+    rain: rainTheme
   },
   /** 菜单布局预览图 */
   menuLayouts: {

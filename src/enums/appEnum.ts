@@ -37,7 +37,9 @@ export enum SystemThemeEnum {
   /** 亮色主题 */
   LIGHT = 'light',
   /** 自动主题（跟随系统） */
-  AUTO = 'auto'
+  AUTO = 'auto',
+  /** 雨天主题（Three.js 下雨效果） */
+  RAIN = 'rain'
 }
 
 /**
@@ -49,9 +51,7 @@ export enum MenuThemeEnum {
   /** 亮色主题 */
   LIGHT = 'light',
   /** 设计主题 */
-  DESIGN = 'design',
-  /** 雨天背景主题（Three.js 下雨效果） */
-  RAIN = 'rain'
+  DESIGN = 'design'
 }
 
 /**
