@@ -1,5 +1,6 @@
 import App from './App.vue'
 import { createApp } from 'vue'
+// import Antd from 'ant-design-vue';
 import { initStore } from './store'                 // Store
 import { initRouter } from './router'               // Router
 import language from './locales'                    // 国际化
