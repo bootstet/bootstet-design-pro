@@ -40,7 +40,8 @@
       auto: 'SystemThemeEnum.AUTO',
       light: 'SystemThemeEnum.LIGHT',
       dark: 'SystemThemeEnum.DARK',
-      rain: 'SystemThemeEnum.RAIN'
+      rain: 'SystemThemeEnum.RAIN',
+      girl: 'SystemThemeEnum.GIRL'
     },
     menuTheme: {
       design: 'MenuThemeEnum.DESIGN',
@@ -90,6 +91,7 @@
     { comment: '标签页样式', key: 'tabStyle' },
     { comment: '自定义圆角', key: 'customRadius' },
     { comment: '容器宽度', key: 'containerWidth', enumMap: ENUM_MAPS.containerWidth },
+    { comment: '页面透明度', key: 'pageOpacity' },
     { comment: '节日日期', key: 'festivalDate', forceValue: '' }
   ]
 
@@ -222,6 +224,7 @@
       settingStore.setTabStyle(config.tabStyle)
       settingStore.setCustomRadius(config.customRadius)
       settingStore.setContainerWidth(config.containerWidth)
+      settingStore.setPageOpacity(config.pageOpacity)
 
       // 节日相关
       settingStore.setFestivalDate(config.festivalDate)

@@ -93,6 +93,22 @@
   box-shadow: #{$shadow} !important;
 }
 
+// 雨天/美女背景下，让内容盒子半透明以便看到背景效果
+html[data-theme='rain'],
+html[data-theme='girl'] {
+  .page-content,
+  .art-card,
+  .art-card-sm,
+  .art-card-xs,
+  .art-table-card,
+  .el-full-screen {
+    background-color: color-mix(in srgb, var(--default-box-color) 70%, transparent) !important;
+    backdrop-filter: blur(10px);
+    // 使用 CSS 变量让用户可自定义透明度，默认 0.7
+    opacity: var(--art-page-opacity, 0.7);
+  }
+}
+
 .art-card,
 .art-card-sm,
 .art-card-xs {

@@ -31,6 +31,17 @@
         :value="option.value"
       />
     </ElSelect>
+
+    <!-- 滑块类型 -->
+    <ElSlider
+      v-else-if="config.type === 'slider'"
+      :model-value="modelValue ?? 0"
+      :min="config.min ?? 0"
+      :max="config.max ?? 1"
+      :step="config.step ?? 0.05"
+      :style="{ width: '140px', ...(config.style || {}) }"
+      @update:model-value="handleChange"
+    />
   </div>
 </template>
 
@@ -40,7 +51,7 @@
   interface SettingItemConfig {
     key: string
     label: string
-    type: 'switch' | 'input-number' | 'select'
+    type: 'switch' | 'input-number' | 'select' | 'slider'
     handler: string
     mobileHide?: boolean
     min?: number

@@ -52,7 +52,7 @@
     },
     "theme": {
       "title": "主题风格",
-      "list": ["浅色", "深色", "系统", "雨天"]
+      "list": ["浅色", "深色", "系统", "雨天", "动漫"]
     },
     "menu": {
       "title": "菜单风格"
@@ -84,7 +84,8 @@
         "menuWidth": "菜单宽度",
         "tabStyle": "标签页风格",
         "pageTransition": "页面切换动画",
-        "borderRadius": "自定义圆角"
+        "borderRadius": "自定义圆角",
+        "pageOpacity": "页面透明度"
       }
     },
     "tabStyle": {

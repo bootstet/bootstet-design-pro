@@ -164,6 +164,12 @@ export function useSettingsPanel() {
 
       themeHandlers.initSystemTheme()
       openFestival()
+
+      // 初始化页面透明度
+      document.documentElement.style.setProperty(
+        '--art-page-opacity',
+        String(settingStore.pageOpacity)
+      )
     }
 
     const cleanupSettings = () => {

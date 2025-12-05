@@ -38,7 +38,8 @@
     menuOpenWidth,
     tabStyle,
     pageTransition,
-    customRadius
+    customRadius,
+    pageOpacity
   } = storeToRefs(settingStore)
 
   // 创建设置值映射
@@ -56,7 +57,8 @@
     menuOpenWidth,
     tabStyle,
     pageTransition,
-    customRadius
+    customRadius,
+    pageOpacity
   }
 
   // 获取设置值的方法

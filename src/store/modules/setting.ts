@@ -112,6 +112,8 @@ export const useSettingStore = defineStore(
     const customRadius = ref(SETTING_DEFAULT_CONFIG.customRadius)
     /** 容器宽度 */
     const containerWidth = ref(SETTING_DEFAULT_CONFIG.containerWidth)
+    /** 页面透明度 */
+    const pageOpacity = ref(SETTING_DEFAULT_CONFIG.pageOpacity)
 
     // 节日相关
     /** 节日日期 */
@@ -131,12 +133,18 @@ export const useSettingStore = defineStore(
     const isRainTheme = computed(() => systemThemeType.value === SystemThemeEnum.RAIN)
 
     /**
+     * 是否为美女动漫主题
+     * 用于在布局中挂载 Three.js 美女动漫背景效果
+     */
+    const isGirlTheme = computed(() => systemThemeType.value === SystemThemeEnum.GIRL)
+
+    /**
      * 获取菜单主题
      * 根据当前主题类型和暗色模式返回对应的主题配置
      */
     const getMenuTheme = computed((): MenuThemeType => {
-      // 雨天主题也使用暗色菜单样式（因为背景是深色）
-      if (isDark.value || isRainTheme.value) {
+      // 雨天和美女主题都使用暗色菜单样式（因为背景整体偏深）
+      if (isDark.value || isRainTheme.value || isGirlTheme.value) {
         return AppConfig.darkMenuStyles[0]
       } else {
         const list = AppConfig.themeList.filter((item) => item.theme === menuThemeType.value)
@@ -224,6 +232,16 @@ export const useSettingStore = defineStore(
      */
     const setContainerWidth = (width: ContainerWidthEnum) => {
       containerWidth.value = width
+    }
+
+    /**
+     * 设置页面透明度
+     * @param opacity 透明度值（0-1）
+     */
+    const setPageOpacity = (opacity: number) => {
+      pageOpacity.value = opacity
+      // 动态设置 CSS 变量
+      document.documentElement.style.setProperty('--art-page-opacity', String(opacity))
     }
 
     /**
@@ -413,8 +431,10 @@ export const useSettingStore = defineStore(
       festivalDate,
       dualMenuShowText,
       containerWidth,
+      pageOpacity,
       getMenuTheme,
       isRainTheme,
+      isGirlTheme,
       isDark,
       getMenuOpenWidth,
       getCustomRadius,
@@ -447,7 +467,8 @@ export const useSettingStore = defineStore(
       setholidayFireworksLoaded,
       setShowFestivalText,
       setFestivalDate,
-      setDualMenuShowText
+      setDualMenuShowText,
+      setPageOpacity
     }
   },
   {

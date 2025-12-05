@@ -3,6 +3,8 @@
   <div class="app-layout">
     <!-- 雨天主题：Three.js 下雨背景 -->
     <ArtRainBackground v-if="settingStore.isRainTheme" />
+    <!-- 美女动漫主题：Three.js 动态美图背景 -->
+    <ArtGirlBackground v-if="settingStore.isGirlTheme" />
     <aside id="app-sidebar">
       <ArtSidebarMenu />
     </aside>

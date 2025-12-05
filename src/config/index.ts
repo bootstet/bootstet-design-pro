@@ -44,7 +44,9 @@ const appConfig: SystemConfig = {
   systemThemeStyles: {
     [SystemThemeEnum.LIGHT]: { className: '' },
     [SystemThemeEnum.DARK]: { className: SystemThemeEnum.DARK },
-    [SystemThemeEnum.RAIN]: { className: SystemThemeEnum.RAIN }
+    [SystemThemeEnum.RAIN]: { className: SystemThemeEnum.RAIN },
+    // 美女动漫主题整体沿用暗色基础样式，由 data-theme 精细控制差异
+    [SystemThemeEnum.GIRL]: { className: SystemThemeEnum.DARK }
   },
   // 系统主题列表
   settingThemeList: [
@@ -79,6 +81,15 @@ const appConfig: SystemConfig = {
       leftLineColor: '#3F4257',
       rightLineColor: '#3F4257',
       img: configImages.themeStyles.rain
+    },
+    {
+      name: 'Beauty',
+      theme: SystemThemeEnum.GIRL,
+      color: ['#fba4d5', '#fba4d5'],
+      leftLineColor: '#FAD1E6',
+      rightLineColor: '#FAD1E6',
+      // 预览图暂时复用暗色主题，可按需替换为单独预览图
+      img: configImages.themeStyles.dark
     }
   ],
   // 菜单布局列表

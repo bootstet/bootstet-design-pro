@@ -52,7 +52,7 @@
     },
     "theme": {
       "title": "Theme Style",
-      "list": ["Light", "Dark", "System", "Rain"]
+      "list": ["Light", "Dark", "System", "Rain", "Girl"]
     },
     "menu": {
       "title": "Menu Style"
@@ -84,7 +84,8 @@
         "menuWidth": "Menu width",
         "tabStyle": "Tab style",
         "pageTransition": "Page animation",
-        "borderRadius": "Custom radius"
+        "borderRadius": "Custom radius",
+        "pageOpacity": "Page Opacity"
       }
     },
     "tabStyle": {

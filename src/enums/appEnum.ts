@@ -39,7 +39,9 @@ export enum SystemThemeEnum {
   /** 自动主题（跟随系统） */
   AUTO = 'auto',
   /** 雨天主题（Three.js 下雨效果） */
-  RAIN = 'rain'
+  RAIN = 'rain',
+  /** 美女动漫主题（Three.js 动态美图背景） */
+  GIRL = 'girl'
 }
 
 /**

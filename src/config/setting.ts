@@ -83,6 +83,8 @@ export const SETTING_DEFAULT_CONFIG = {
   customRadius: '0.75',
   /** 容器宽度 */
   containerWidth: ContainerWidthEnum.FULL,
+  /** 页面透明度（用于雨天/美女主题等背景效果） */
+  pageOpacity: 0.7,
   /** 节日日期 */
   festivalDate: ''
 }

@@ -64,7 +64,14 @@ export function useTheme() {
     disableTransitions()
 
     const el = document.getElementsByTagName('html')[0]
-    const isDark = theme === SystemThemeEnum.DARK
+    // 暗色相关主题：暗色本身 + 特殊暗色主题（如雨天、美女动漫）
+    const isDark =
+      theme === SystemThemeEnum.DARK ||
+      theme === SystemThemeEnum.RAIN ||
+      theme === SystemThemeEnum.GIRL
+
+    // 记录当前主题类型，便于样式中精确判断（例如雨天主题）
+    el.setAttribute('data-theme', theme)
 
     if (!themeMode) {
       themeMode = theme
@@ -153,12 +160,13 @@ export function initializeTheme() {
     // 设置主题 class
     const currentTheme = AppConfig.systemThemeStyles[actualTheme as keyof SystemThemeTypes]
     if (currentTheme) {
-      // 雨天主题应用暗色样式
+      // 雨天主题应用暗色样式，但通过 data-theme 保留真实主题类型
       if (actualTheme === SystemThemeEnum.RAIN) {
         el.setAttribute('class', SystemThemeEnum.DARK)
       } else {
         el.setAttribute('class', currentTheme.className)
       }
+      el.setAttribute('data-theme', actualTheme)
     }
 
     // 设置主题颜色

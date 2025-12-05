@@ -212,6 +212,16 @@ export function useSettingsConfig() {
         options: customRadiusOptions,
         style: { width: '120px' },
         headerBarKey: null // 不依赖headerBar配置
+      },
+      {
+        key: 'pageOpacity',
+        label: t('setting.basics.list.pageOpacity'),
+        type: 'slider' as const,
+        handler: 'pageOpacity',
+        min: 0,
+        max: 1,
+        step: 0.05,
+        headerBarKey: null // 不依赖headerBar配置
       }
     ]
 

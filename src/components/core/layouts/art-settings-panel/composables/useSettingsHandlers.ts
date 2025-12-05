@@ -113,6 +113,11 @@ export function useSettingsHandlers() {
     // 圆角大小
     customRadius: createValueHandler<string>((radius: string) =>
       settingStore.setCustomRadius(radius)
+    ),
+
+    // 页面透明度
+    pageOpacity: createValueHandler<number>((opacity: number) =>
+      settingStore.setPageOpacity(opacity)
     )
   }
 
