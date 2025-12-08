@@ -32,7 +32,7 @@
   let resizeHandler: (() => void) | null = null
 
   // 背景图：默认使用用户背景，你可以换成自己的动漫美女图片
-  const BG_TEXTURE_PATH = new URL('@/assets/images/user/bg.webp', import.meta.url).href
+  const BG_TEXTURE_PATH = new URL('@/assets/images/user/rain.jpeg', import.meta.url).href
 
   // 世界坐标下平面高度（宽度会根据屏幕宽高比自动计算）
   const WORLD_PLANE_HEIGHT = 10
@@ -43,13 +43,10 @@
 
     const width = window.innerWidth
     const height = window.innerHeight
+    if (scene) {
+      scene.background = new THREE.Color(0x080712)
+    }
     const aspect = width / height
-
-    scene = new THREE.Scene()
-
-    // 轻微偏紫色的环境色，增强二次元氛围
-    scene.background = new THREE.Color(0x080712)
-
     camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100)
     camera.position.set(0, 0, 12)
 
@@ -63,6 +60,9 @@
 
     container.appendChild(renderer.domElement)
 
+    scene = new THREE.Scene()
+
+    // 轻微偏紫色的环境色，增强二次元氛围
     const loader = new THREE.TextureLoader()
     loader.load(BG_TEXTURE_PATH, (texture) => {
       texture.wrapS = THREE.MirroredRepeatWrapping
