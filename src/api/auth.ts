@@ -7,7 +7,8 @@ import request from '@/utils/http'
  */
 export function fetchLogin(params: Api.Auth.LoginParams) {
   return request.post<Api.Auth.LoginResponse>({
-    url: '/api/auth/login',
+    // url: '/api/auth/login',
+    url: '/glk/admin/user/login',
     params
     // showSuccessMessage: true // 显示成功消息
     // showErrorMessage: false // 不显示错误消息
@@ -18,9 +19,19 @@ export function fetchLogin(params: Api.Auth.LoginParams) {
  * 获取用户信息
  * @returns 用户信息
  */
+// export function fetchGetUserInfo() {
+//   return request.get<Api.Auth.UserInfo>({
+//     url: '/api/user/info'
+//     // 自定义请求头
+//     // headers: {
+//     //   'X-Custom-Header': 'your-custom-value'
+//     // }
+//   })
+// }
+
 export function fetchGetUserInfo() {
-  return request.get<Api.Auth.UserInfo>({
-    url: '/api/user/info'
+  return request.post<Api.Auth.UserInfo>({
+    url: '/glk/admin/user/info'
     // 自定义请求头
     // headers: {
     //   'X-Custom-Header': 'your-custom-value'

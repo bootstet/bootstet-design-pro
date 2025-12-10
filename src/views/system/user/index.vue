@@ -42,18 +42,23 @@
 </template>
 
 <script setup lang="ts">
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
-  import { ACCOUNT_TABLE_DATA } from '@/mock/temp/formData'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchGetUserList } from '@/api/system-manage'
+  import {
+    fetchAdminUserList,
+    type AdminUserItem,
+    type AdminUserSearchParams,
+    fetchChangeAdminUserStatus,
+    fetchResetAdminUserPwd
+  } from '@/api/system-manage'
+  import { formatDateTime } from '@/utils'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
-  import { ElTag, ElMessageBox, ElImage } from 'element-plus'
+  import { ElButton, ElSwitch, ElMessageBox } from 'element-plus'
   import { DialogType } from '@/types'
 
   defineOptions({ name: 'User' })
 
-  type UserListItem = Api.SystemManage.UserListItem
+  type UserListItem = AdminUserItem
 
   // 弹窗相关
   const dialogType = ref<DialogType>('add')
@@ -63,34 +68,11 @@
   // 选中行
   const selectedRows = ref<UserListItem[]>([])
 
-  // 搜索表单
-  const searchForm = ref({
-    userName: undefined,
-    userGender: undefined,
-    userPhone: undefined,
-    userEmail: undefined,
-    status: '1'
+  // 搜索表单（字段参考旧项目 AdminManagement：account、phone）
+  const searchForm = ref<Pick<AdminUserSearchParams, 'account' | 'phone'>>({
+    account: '',
+    phone: ''
   })
-
-  // 用户状态配置
-  const USER_STATUS_CONFIG = {
-    '1': { type: 'success' as const, text: '在线' },
-    '2': { type: 'info' as const, text: '离线' },
-    '3': { type: 'warning' as const, text: '异常' },
-    '4': { type: 'danger' as const, text: '注销' }
-  } as const
-
-  /**
-   * 获取用户状态配置
-   */
-  const getUserStatusConfig = (status: string) => {
-    return (
-      USER_STATUS_CONFIG[status as keyof typeof USER_STATUS_CONFIG] || {
-        type: 'info' as const,
-        text: '未知'
-      }
-    )
-  }
 
   const {
     columns,
@@ -103,102 +85,112 @@
     resetSearchParams,
     handleSizeChange,
     handleCurrentChange,
-    refreshData
+    refreshData,
+    refreshUpdate
   } = useTable({
     // 核心配置
     core: {
-      apiFn: fetchGetUserList,
+      apiFn: fetchAdminUserList,
       apiParams: {
-        current: 1,
-        size: 20,
+        page: 1,
+        limit: 20,
         ...searchForm.value
+      } as AdminUserSearchParams,
+      // 旧项目分页字段：page / limit
+      paginationKey: {
+        current: 'page',
+        size: 'limit'
       },
-      // 自定义分页字段映射，未设置时将使用全局配置 tableConfig.ts 中的 paginationKey
-      // paginationKey: {
-      //   current: 'pageNum',
-      //   size: 'pageSize'
-      // },
       columnsFactory: () => [
-        { type: 'selection' }, // 勾选列
-        { type: 'index', width: 60, label: '序号' }, // 序号
+        { type: 'selection' },
+        { type: 'index', width: 60, label: '序号' },
         {
-          prop: 'userInfo',
+          prop: 'id',
+          label: 'ID',
+          width: 80
+        },
+        {
+          prop: 'account',
           label: '用户名',
-          width: 280,
-          // visible: false, // 默认是否显示列
-          formatter: (row) => {
-            return h('div', { class: 'user flex-c' }, [
-              h(ElImage, {
-                class: 'size-9.5 rounded-md',
-                src: row.avatar,
-                previewSrcList: [row.avatar],
-                // 图片预览是否插入至 body 元素上，用于解决表格内部图片预览样式异常
-                previewTeleported: true
-              }),
-              h('div', { class: 'ml-2' }, [
-                h('p', { class: 'user-name' }, row.userName),
-                h('p', { class: 'email' }, row.userEmail)
-              ])
-            ])
-          }
+          minWidth: 150
         },
         {
-          prop: 'userGender',
-          label: '性别',
-          sortable: true,
-          formatter: (row) => row.userGender
+          prop: 'roleName',
+          label: '用户角色',
+          minWidth: 150,
+          showOverflowTooltip: true
         },
-        { prop: 'userPhone', label: '手机号' },
         {
-          prop: 'status',
+          prop: 'deptName',
+          label: '部门',
+          minWidth: 150,
+          showOverflowTooltip: true
+        },
+        {
+          prop: 'isForbidden',
           label: '状态',
-          formatter: (row) => {
-            const statusConfig = getUserStatusConfig(row.status)
-            return h(ElTag, { type: statusConfig.type }, () => statusConfig.text)
-          }
+          width: 120,
+          formatter: (row: UserListItem) =>
+            h(ElSwitch, {
+              modelValue: row.isForbidden,
+              'onUpdate:modelValue': () => {},
+              activeValue: false,
+              inactiveValue: true,
+              onChange: () => handleStatusChange(row)
+            })
         },
         {
           prop: 'createTime',
-          label: '创建日期',
-          sortable: true
+          label: '创建时间',
+          width: 180,
+          sortable: true,
+          formatter: (row: UserListItem) => formatDateTime(row.createTime)
+        },
+        {
+          prop: 'lastLoginTime',
+          label: '最近登录时间',
+          width: 180,
+          sortable: true,
+          formatter: (row: UserListItem) => formatDateTime(row.lastLoginTime)
         },
         {
           prop: 'operation',
           label: '操作',
-          width: 120,
-          fixed: 'right', // 固定列
-          formatter: (row) =>
-            h('div', [
-              h(ArtButtonTable, {
-                type: 'edit',
-                onClick: () => showDialog('edit', row)
-              }),
-              h(ArtButtonTable, {
-                type: 'delete',
-                onClick: () => deleteUser(row)
-              })
+          width: 160,
+          fixed: 'right',
+          formatter: (row: UserListItem) =>
+            h('div', { class: 'flex items-center gap-2' }, [
+              h(
+                ElButton,
+                {
+                  type: 'primary',
+                  link: true,
+                  size: 'small',
+                  onClick: () => resetPwd(row)
+                },
+                () => '重置密码'
+              ),
+              h(
+                ElButton,
+                {
+                  type: 'primary',
+                  link: true,
+                  size: 'small',
+                  disabled: row.account === 'admin',
+                  style:
+                    row.account === 'admin'
+                      ? 'opacity: 0.4; cursor: not-allowed;'
+                      : 'cursor: pointer;',
+                  onClick: () => {
+                    if (row.account === 'admin') return
+                    showDialog('edit', row)
+                  }
+                },
+                () => '编辑'
+              )
             ])
         }
       ]
-    },
-    // 数据处理
-    transform: {
-      // 数据转换器 - 替换头像
-      dataTransformer: (records) => {
-        // 类型守卫检查
-        if (!Array.isArray(records)) {
-          console.warn('数据转换器: 期望数组类型，实际收到:', typeof records)
-          return []
-        }
-
-        // 使用本地头像替换接口返回的头像
-        return records.map((item, index: number) => {
-          return {
-            ...item,
-            avatar: ACCOUNT_TABLE_DATA[index % ACCOUNT_TABLE_DATA.length].avatar
-          }
-        })
-      }
     }
   })
 
@@ -207,9 +199,14 @@
    * @param params 参数
    */
   const handleSearch = (params: Record<string, any>) => {
-    console.log(params)
-    // 搜索参数赋值
-    Object.assign(searchParams, params)
+    // 同步外部搜索表单
+    Object.assign(searchForm.value, params)
+    // 同步给 useTable 内部的 searchParams，并重置到第一页
+    Object.assign(searchParams, {
+      page: 1,
+      limit: pagination.size,
+      ...searchForm.value
+    })
     getData()
   }
 
@@ -217,7 +214,6 @@
    * 显示用户弹窗
    */
   const showDialog = (type: DialogType, row?: UserListItem): void => {
-    console.log('打开弹窗:', { type, row })
     dialogType.value = type
     currentUserData.value = row || {}
     nextTick(() => {
@@ -226,29 +222,51 @@
   }
 
   /**
-   * 删除用户
+   * 处理弹窗提交事件（新增/编辑成功后刷新列表）
    */
-  const deleteUser = (row: UserListItem): void => {
-    console.log('删除用户:', row)
-    ElMessageBox.confirm(`确定要注销该用户吗？`, '注销用户', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'error'
-    }).then(() => {
-      ElMessage.success('注销成功')
-    })
+  const handleDialogSubmit = async () => {
+    dialogVisible.value = false
+    currentUserData.value = {}
+    await refreshUpdate()
   }
 
   /**
-   * 处理弹窗提交事件
+   * 重置密码
    */
-  const handleDialogSubmit = async () => {
-    try {
-      dialogVisible.value = false
-      currentUserData.value = {}
-    } catch (error) {
-      console.error('提交失败:', error)
+  const resetPwd = async (row: UserListItem) => {
+    await ElMessageBox.confirm(`确定要重置用户“${row.account}”的密码吗？`, '重置密码', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await fetchResetAdminUserPwd({ id: row.id })
+    await refreshUpdate()
+  }
+
+  /**
+   * 修改用户状态（启用 / 禁用），逻辑参考旧项目 adminManagement
+   */
+  const handleStatusChange = async (row: UserListItem) => {
+    await ElMessageBox.confirm('确定要改变当前用户状态吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    let userStatus: string | number
+    if (row.isForbidden) {
+      // 旧项目逻辑：当前为禁用(true) -> 传 0 表示启用
+      userStatus = '0'
+    } else {
+      // 当前为启用(false) -> 传 1 表示禁用
+      userStatus = '1'
     }
+
+    await fetchChangeAdminUserStatus({
+      userId: row.id,
+      isForbidden: userStatus
+    })
+    await refreshUpdate()
   }
 
   /**
@@ -256,6 +274,5 @@
    */
   const handleSelectionChange = (selection: UserListItem[]): void => {
     selectedRows.value = selection
-    console.log('选中行数据:', selectedRows.value)
   }
 </script>

@@ -29,3 +29,6 @@ export * from './http'
 
 // 表单相关
 export * from './form'
+
+// 日期时间相关
+export * from './date'

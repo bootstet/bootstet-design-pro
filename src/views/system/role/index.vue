@@ -46,42 +46,51 @@
       @success="refreshData"
     />
 
-    <!-- 菜单权限弹窗 -->
+    <!-- 菜单+数据权限弹窗（根据旧项目，实际可以合并在编辑里，这里暂保留单独权限配置） -->
     <RolePermissionDialog
       v-model="permissionDialog"
       :role-data="currentRoleData"
+      @success="refreshData"
+    />
+
+    <!-- 关联员工弹窗 -->
+    <RoleEmployeeDialog
+      v-model="employeeDialog"
+      :role-id="currentRoleData?.id"
       @success="refreshData"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-  import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchGetRoleList } from '@/api/system-manage'
-  import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
+  import {
+    fetchAdminRoleList,
+    type AdminRoleItem,
+    type AdminRoleSearchParams,
+    fetchAdminRoleDelete
+  } from '@/api/system-manage'
   import RoleSearch from './modules/role-search.vue'
   import RoleEditDialog from './modules/role-edit-dialog.vue'
   import RolePermissionDialog from './modules/role-permission-dialog.vue'
-  import { ElTag, ElMessageBox } from 'element-plus'
+  import RoleEmployeeDialog from './modules/role-employee-dialog.vue'
+  import { ElMessageBox } from 'element-plus'
 
   defineOptions({ name: 'Role' })
 
-  type RoleListItem = Api.SystemManage.RoleListItem
+  type RoleListItem = AdminRoleItem
 
   // 搜索表单
-  const searchForm = ref({
-    roleName: undefined,
-    roleCode: undefined,
-    description: undefined,
-    enabled: undefined,
-    daterange: undefined
+  const searchForm = ref<Pick<AdminRoleSearchParams, 'name'>>({
+    name: ''
   })
 
-  const showSearchBar = ref(false)
+  // 默认显示搜索栏
+  const showSearchBar = ref(true)
 
   const dialogVisible = ref(false)
   const permissionDialog = ref(false)
+  const employeeDialog = ref(false)
   const currentRoleData = ref<RoleListItem | undefined>(undefined)
 
   const {
@@ -99,84 +108,86 @@
   } = useTable({
     // 核心配置
     core: {
-      apiFn: fetchGetRoleList,
+      apiFn: fetchAdminRoleList,
       apiParams: {
-        current: 1,
-        size: 20
+        page: 1,
+        limit: 20,
+        ...searchForm.value
+      } as AdminRoleSearchParams,
+      // 分页字段与旧项目保持一致：page / limit
+      paginationKey: {
+        current: 'page',
+        size: 'limit'
       },
-      // 排除 apiParams 中的属性
-      excludeParams: ['daterange'],
       columnsFactory: () => [
         {
-          prop: 'roleId',
-          label: '角色ID',
-          width: 100
+          prop: 'id',
+          label: 'ID',
+          width: 80
         },
         {
-          prop: 'roleName',
+          prop: 'name',
           label: '角色名称',
           minWidth: 120
         },
         {
-          prop: 'roleCode',
-          label: '角色编码',
-          minWidth: 120
-        },
-        {
-          prop: 'description',
+          prop: 'describes',
           label: '角色描述',
           minWidth: 150,
           showOverflowTooltip: true
         },
         {
-          prop: 'enabled',
-          label: '角色状态',
-          width: 100,
-          formatter: (row) => {
-            const statusConfig = row.enabled
-              ? { type: 'success', text: '启用' }
-              : { type: 'warning', text: '禁用' }
-            return h(
-              ElTag,
-              { type: statusConfig.type as 'success' | 'warning' },
-              () => statusConfig.text
-            )
-          }
-        },
-        {
-          prop: 'createTime',
-          label: '创建日期',
-          width: 180,
-          sortable: true
-        },
-        {
           prop: 'operation',
           label: '操作',
-          width: 80,
+          width: 200,
           fixed: 'right',
-          formatter: (row) =>
-            h('div', [
-              h(ArtButtonMore, {
-                list: [
-                  {
-                    key: 'permission',
-                    label: '菜单权限',
-                    icon: 'ri:user-3-line'
-                  },
-                  {
-                    key: 'edit',
-                    label: '编辑角色',
-                    icon: 'ri:edit-2-line'
-                  },
-                  {
-                    key: 'delete',
-                    label: '删除角色',
-                    icon: 'ri:delete-bin-4-line',
-                    color: '#f56c6c'
+          formatter: (row: RoleListItem) =>
+            h('div', { class: 'flex items-center gap-2' }, [
+              // 编辑
+              h(
+                ElButton,
+                {
+                  type: 'primary',
+                  link: true,
+                  size: 'small',
+                  disabled: row.name === 'admin',
+                  onClick: () => {
+                    if (row.name === 'admin') return
+                    showDialog('edit', row)
                   }
-                ],
-                onClick: (item: ButtonMoreItem) => buttonMoreClick(item, row)
-              })
+                },
+                () => '编辑'
+              ),
+              // 删除
+              h(
+                ElButton,
+                {
+                  type: 'danger',
+                  link: true,
+                  size: 'small',
+                  disabled: row.name === 'admin',
+                  onClick: () => {
+                    if (row.name === 'admin') return
+                    deleteRole(row)
+                  }
+                },
+                () => '删除'
+              ),
+              // 关联员工
+              h(
+                ElButton,
+                {
+                  type: 'primary',
+                  link: true,
+                  size: 'small',
+                  disabled: row.name === 'admin',
+                  onClick: () => {
+                    if (row.name === 'admin') return
+                    showEmployeeDialog(row)
+                  }
+                },
+                () => '关联员工'
+              )
             ])
         }
       ]
@@ -196,42 +207,26 @@
    * @param params 搜索参数
    */
   const handleSearch = (params: Record<string, any>) => {
-    // 处理日期区间参数，把 daterange 转换为 startTime 和 endTime
-    const { daterange, ...filtersParams } = params
-    const [startTime, endTime] = Array.isArray(daterange) ? daterange : [null, null]
-
-    // 搜索参数赋值
-    Object.assign(searchParams, { ...filtersParams, startTime, endTime })
+    // 旧项目只按角色名称 name 查询
+    Object.assign(searchParams, { page: 1, limit: pagination.size, name: params.name || '' })
     getData()
   }
 
-  const buttonMoreClick = (item: ButtonMoreItem, row: RoleListItem) => {
-    switch (item.key) {
-      case 'permission':
-        showPermissionDialog(row)
-        break
-      case 'edit':
-        showDialog('edit', row)
-        break
-      case 'delete':
-        deleteRole(row)
-        break
-    }
-  }
-
-  const showPermissionDialog = (row?: RoleListItem) => {
-    permissionDialog.value = true
+  const showEmployeeDialog = (row?: RoleListItem) => {
+    employeeDialog.value = true
     currentRoleData.value = row
   }
 
   const deleteRole = (row: RoleListItem) => {
-    ElMessageBox.confirm(`确定删除角色"${row.roleName}"吗？此操作不可恢复！`, '删除确认', {
+    if (row.name === 'admin') return
+
+    ElMessageBox.confirm(`确定删除角色"${row.name}"吗？此操作不可恢复！`, '删除确认', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-      .then(() => {
-        // TODO: 调用删除接口
+      .then(async () => {
+        await fetchAdminRoleDelete({ id: row.id })
         ElMessage.success('删除成功')
         refreshData()
       })

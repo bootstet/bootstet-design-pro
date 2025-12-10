@@ -18,7 +18,7 @@
             @keyup.enter="handleSubmit"
             style="margin-top: 25px"
           >
-            <ElFormItem prop="account">
+            <!-- <ElFormItem prop="account">
               <ElSelect v-model="formData.account" @change="setupAccount">
                 <ElOption
                   v-for="account in accounts"
@@ -29,7 +29,7 @@
                   <span>{{ account.label }}</span>
                 </ElOption>
               </ElSelect>
-            </ElFormItem>
+            </ElFormItem> -->
             <ElFormItem prop="username">
               <ElInput
                 class="custom-height"
@@ -49,7 +49,7 @@
             </ElFormItem>
 
             <!-- 推拽验证 -->
-            <div class="relative pb-5 mt-6">
+            <!-- <div class="relative pb-5 mt-6">
               <div
                 class="relative z-[2] overflow-hidden select-none rounded-lg border border-transparent tad-300"
                 :class="{ '!border-[#FF4E4F]': !isPassing && isClickPass }"
@@ -71,7 +71,7 @@
               >
                 {{ $t('login.placeholder.slider') }}
               </p>
-            </div>
+            </div> -->
 
             <div class="flex-cb mt-2 text-sm">
               <ElCheckbox v-model="formData.rememberPassword">{{
@@ -110,17 +110,13 @@
 <script setup lang="ts">
   import AppConfig from '@/config'
   import { useUserStore } from '@/store/modules/user'
-  import { getCssVar } from '@/utils/ui'
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
-  import { fetchLogin, fetchGetUserInfo } from '@/api/auth'
+  import { fetchLogin } from '@/api/auth'
   import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
-  import { useSettingStore } from '@/store/modules/setting'
 
   defineOptions({ name: 'Login' })
 
-  const settingStore = useSettingStore()
-  const { isDark } = storeToRefs(settingStore)
   const { t, locale } = useI18n()
   const formKey = ref(0)
 
@@ -167,8 +163,6 @@
 
   const userStore = useUserStore()
   const router = useRouter()
-  const isPassing = ref(false)
-  const isClickPass = ref(false)
 
   const systemName = AppConfig.systemInfo.name
   const formRef = ref<FormInstance>()
@@ -209,30 +203,30 @@
       if (!valid) return
 
       // 拖拽验证
-      if (!isPassing.value) {
-        isClickPass.value = true
-        return
-      }
+      // if (!isPassing.value) {
+      //   isClickPass.value = true
+      //   return
+      // }
 
       loading.value = true
 
       // 登录请求
       const { username, password } = formData
 
-      const { token, refreshToken } = await fetchLogin({
-        userName: username,
+      const { accessToken } = await fetchLogin({
+        username,
         password
       })
 
       // 验证token
-      if (!token) {
+      if (!accessToken) {
         throw new Error('Login failed - no token received')
       }
-
       // 存储token和用户信息
-      userStore.setToken(token, refreshToken)
-      const userInfo = await fetchGetUserInfo()
-      userStore.setUserInfo(userInfo)
+      userStore.setToken(accessToken, accessToken)
+      console.log('after login, store.accessToken =', userStore.accessToken)
+      // const userInfo = await fetchGetUserInfo()
+      // userStore.setUserInfo(userInfo)
       userStore.setLoginStatus(true)
 
       // 登录成功处理

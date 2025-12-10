@@ -1,51 +1,58 @@
 <template>
   <ElDialog
     v-model="dialogVisible"
-    :title="dialogType === 'add' ? '添加用户' : '编辑用户'"
-    width="30%"
+    :title="dialogType === 'add' ? '添加后台用户' : '编辑后台用户'"
+    width="480px"
     align-center
   >
-    <ElForm ref="formRef" :model="formData" :rules="rules" label-width="80px">
-      <ElFormItem label="用户名" prop="username">
-        <ElInput v-model="formData.username" placeholder="请输入用户名" />
+    <ElForm ref="formRef" :model="formData" :rules="rules" label-width="90px">
+      <ElFormItem label="用户名" prop="account">
+        <ElInput
+          v-model="formData.account"
+          :disabled="dialogType === 'edit'"
+          placeholder="请输入用户名"
+        />
       </ElFormItem>
-      <ElFormItem label="手机号" prop="phone">
-        <ElInput v-model="formData.phone" placeholder="请输入手机号" />
-      </ElFormItem>
-      <ElFormItem label="性别" prop="gender">
-        <ElSelect v-model="formData.gender">
-          <ElOption label="男" value="男" />
-          <ElOption label="女" value="女" />
+      <ElFormItem label="所属部门" prop="deptId">
+        <ElSelect v-model="formData.deptId" placeholder="请选择所属部门" filterable>
+          <ElOption
+            v-for="dept in deptList"
+            :key="dept.id"
+            :label="dept.deptName"
+            :value="dept.id"
+          />
         </ElSelect>
       </ElFormItem>
-      <ElFormItem label="角色" prop="role">
-        <ElSelect v-model="formData.role" multiple>
-          <ElOption
-            v-for="role in roleList"
-            :key="role.roleCode"
-            :value="role.roleCode"
-            :label="role.roleName"
-          />
+      <ElFormItem label="角色" prop="roleId">
+        <ElSelect v-model="formData.roleId" placeholder="请选择角色">
+          <ElOption v-for="role in roleList" :key="role.id" :value="role.id" :label="role.name" />
         </ElSelect>
       </ElFormItem>
     </ElForm>
     <template #footer>
       <div class="dialog-footer">
         <ElButton @click="dialogVisible = false">取消</ElButton>
-        <ElButton type="primary" @click="handleSubmit">提交</ElButton>
+        <ElButton type="primary" @click="handleSubmit">确定</ElButton>
       </div>
     </template>
   </ElDialog>
 </template>
 
 <script setup lang="ts">
-  import { ROLE_LIST_DATA } from '@/mock/temp/formData'
   import type { FormInstance, FormRules } from 'element-plus'
+  import { DialogType } from '@/types'
+  import {
+    type AdminUserItem,
+    fetchAddAdminUser,
+    fetchUpdateAdminUser,
+    fetchAdminDeptList,
+    fetchAdminRoleSimpleList
+  } from '@/api/system-manage'
 
   interface Props {
     visible: boolean
-    type: string
-    userData?: Partial<Api.SystemManage.UserListItem>
+    type: DialogType
+    userData?: Partial<AdminUserItem>
   }
 
   interface Emits {
@@ -56,8 +63,9 @@
   const props = defineProps<Props>()
   const emit = defineEmits<Emits>()
 
-  // 角色列表数据
-  const roleList = ref(ROLE_LIST_DATA)
+  // 部门、角色选项
+  const deptList = ref<{ id: number; deptName: string }[]>([])
+  const roleList = ref<{ id: number; name: string }[]>([])
 
   // 对话框显示控制
   const dialogVisible = computed({
@@ -70,53 +78,53 @@
   // 表单实例
   const formRef = ref<FormInstance>()
 
-  // 表单数据
+  // 表单数据（字段参考旧项目 AdminManagementEdit）
   const formData = reactive({
-    username: '',
-    phone: '',
-    gender: '男',
-    role: [] as string[]
+    account: '',
+    deptId: undefined as number | undefined,
+    roleId: undefined as number | undefined,
+    userId: undefined as number | undefined
   })
 
   // 表单验证规则
   const rules: FormRules = {
-    username: [
+    account: [
       { required: true, message: '请输入用户名', trigger: 'blur' },
       { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
     ],
-    phone: [
-      { required: true, message: '请输入手机号', trigger: 'blur' },
-      { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
-    ],
-    gender: [{ required: true, message: '请选择性别', trigger: 'blur' }],
-    role: [{ required: true, message: '请选择角色', trigger: 'blur' }]
+    deptId: [{ required: true, message: '请选择所属部门', trigger: 'change' }],
+    roleId: [{ required: true, message: '请选择角色', trigger: 'change' }]
   }
 
-  /**
-   * 初始化表单数据
-   * 根据对话框类型（新增/编辑）填充表单
-   */
+  // 初始化表单数据
   const initFormData = () => {
-    const isEdit = props.type === 'edit' && props.userData
     const row = props.userData
-
-    Object.assign(formData, {
-      username: isEdit && row ? row.userName || '' : '',
-      phone: isEdit && row ? row.userPhone || '' : '',
-      gender: isEdit && row ? row.userGender || '男' : '男',
-      role: isEdit && row ? (Array.isArray(row.userRoles) ? row.userRoles : []) : []
-    })
+    if (dialogType.value === 'edit' && row) {
+      formData.account = row.account || ''
+      formData.deptId = (row as any).deptId
+      formData.roleId = (row as any).roleId
+      formData.userId = row.id as number
+    } else {
+      formData.account = ''
+      formData.deptId = undefined
+      formData.roleId = undefined
+      formData.userId = undefined
+    }
   }
 
-  /**
-   * 监听对话框状态变化
-   * 当对话框打开时初始化表单数据并清除验证状态
-   */
+  // 加载部门、角色选项（接口字段对接旧项目）
+  const loadOptions = async () => {
+    deptList.value = await fetchAdminDeptList()
+    roleList.value = await fetchAdminRoleSimpleList()
+  }
+
+  // 监听对话框状态变化，打开时初始化表单并加载选项
   watch(
     () => [props.visible, props.type, props.userData],
-    ([visible]) => {
+    async ([visible]) => {
       if (visible) {
         initFormData()
+        await loadOptions()
         nextTick(() => {
           formRef.value?.clearValidate()
         })
@@ -125,19 +133,30 @@
     { immediate: true }
   )
 
-  /**
-   * 提交表单
-   * 验证通过后触发提交事件
-   */
+  // 提交表单：区分新增 / 编辑，对接旧项目接口
   const handleSubmit = async () => {
     if (!formRef.value) return
 
-    await formRef.value.validate((valid) => {
-      if (valid) {
-        ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
-        dialogVisible.value = false
-        emit('submit')
+    await formRef.value.validate(async (valid) => {
+      if (!valid) return
+
+      if (dialogType.value === 'add') {
+        await fetchAddAdminUser({
+          account: formData.account,
+          deptId: formData.deptId!,
+          roleId: formData.roleId!
+        })
+      } else {
+        await fetchUpdateAdminUser({
+          userId: formData.userId!,
+          account: formData.account,
+          deptId: formData.deptId!,
+          roleId: formData.roleId!
+        })
       }
+
+      dialogVisible.value = false
+      emit('submit')
     })
   }
 </script>

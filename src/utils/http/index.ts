@@ -34,8 +34,17 @@ let unauthorizedTimer: NodeJS.Timeout | null = null
 
 /** 扩展 AxiosRequestConfig */
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
+  /** 是否显示错误消息（默认 true） */
   showErrorMessage?: boolean
+  /** 是否显示成功消息 */
   showSuccessMessage?: boolean
+  /**
+   * 自定义基础请求地址（小写写法）
+   *
+   * - 如果配置了 baseUrl，则本次请求会使用该地址作为 baseURL
+   * - 不会影响全局 axios 实例的默认 baseURL
+   */
+  baseUrl?: string
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
@@ -45,6 +54,10 @@ const axiosInstance = axios.create({
   timeout: REQUEST_TIMEOUT,
   baseURL: VITE_API_URL,
   withCredentials: VITE_WITH_CREDENTIALS === 'true',
+  headers: {
+    'zg-version': '2.8.5',
+    source: '1'
+  },
   validateStatus: (status) => status >= 200 && status < 300,
   transformResponse: [
     (data, headers) => {
@@ -62,10 +75,20 @@ const axiosInstance = axios.create({
 })
 
 /** 请求拦截器 */
+/** 请求拦截器 */
 axiosInstance.interceptors.request.use(
   (request: InternalAxiosRequestConfig) => {
-    const { accessToken } = useUserStore()
-    if (accessToken) request.headers.set('Authorization', accessToken)
+    const userStore = useUserStore()
+
+    // if (request.url?.includes('/glk/admin/')) {
+    if (userStore.accessToken) {
+      // 如果后端需要 Bearer，加上前缀；否则直接用 token 即可
+      request.headers.set('Authorization', `Bearer ${userStore.accessToken}`)
+    }
+    // } else {
+    // const { accessToken } = useUserStore()
+    // if (accessToken) request.headers.set('Authorization', accessToken)
+    // }
 
     if (request.data && !(request.data instanceof FormData) && !request.headers['Content-Type']) {
       request.headers.set('Content-Type', 'application/json')
@@ -79,13 +102,13 @@ axiosInstance.interceptors.request.use(
     return Promise.reject(error)
   }
 )
-
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
     const { code, msg } = response.data
     if (code === ApiStatus.success) return response
     if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg)
+    if (code === ApiStatus.loginFailed) handleUnauthorizedError(msg)
     throw createHttpError(msg || $t('httpMsg.requestFailed'), code)
   },
   (error) => {
@@ -174,18 +197,24 @@ async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> 
     config.params = undefined
   }
 
+  // 兼容自定义 baseUrl：如果传入了 baseUrl，则仅对本次请求生效
+  const axiosConfig: ExtendedAxiosRequestConfig = { ...config }
+  if (axiosConfig.baseUrl && !axiosConfig.baseURL) {
+    axiosConfig.baseURL = axiosConfig.baseUrl
+  }
+
   try {
-    const res = await axiosInstance.request<BaseResponse<T>>(config)
+    const res = await axiosInstance.request<BaseResponse<T>>(axiosConfig)
 
     // 显示成功消息
-    if (config.showSuccessMessage && res.data.msg) {
+    if (axiosConfig.showSuccessMessage && res.data.msg) {
       showSuccess(res.data.msg)
     }
 
     return res.data.data as T
   } catch (error) {
     if (error instanceof HttpError && error.code !== ApiStatus.unauthorized) {
-      const showMsg = config.showErrorMessage !== false
+      const showMsg = axiosConfig.showErrorMessage !== false
       showError(error, showMsg)
     }
     return Promise.reject(error)

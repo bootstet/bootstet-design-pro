@@ -2,13 +2,13 @@
 <template>
   <div class="menu-page art-full-height">
     <!-- 搜索栏 -->
-    <ArtSearchBar
+    <!-- <ArtSearchBar
       v-model="formFilters"
       :items="formItems"
       :showExpand="false"
       @reset="handleReset"
       @search="handleSearch"
-    />
+    /> -->
 
     <ElCard class="art-table-card" shadow="never">
       <!-- 表格头部 -->
@@ -55,7 +55,12 @@
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
-  import { fetchGetMenuList } from '@/api/system-manage'
+  import {
+    fetchAdminMenuTree,
+    fetchAdminMenuDelete,
+    fetchAdminMenuSaveOrUpdate,
+    type AdminMenuItem
+  } from '@/api/system-manage'
   import { ElTag, ElMessageBox } from 'element-plus'
 
   defineOptions({ name: 'Menus' })
@@ -77,23 +82,7 @@
     route: ''
   }
 
-  const formFilters = reactive({ ...initialSearchState })
   const appliedFilters = reactive({ ...initialSearchState })
-
-  const formItems = computed(() => [
-    {
-      label: '菜单名称',
-      key: 'name',
-      type: 'input',
-      props: { clearable: true }
-    },
-    {
-      label: '路由地址',
-      key: 'route',
-      type: 'input',
-      props: { clearable: true }
-    }
-  ])
 
   onMounted(() => {
     getMenuList()
@@ -106,8 +95,30 @@
     loading.value = true
 
     try {
-      const list = await fetchGetMenuList()
-      tableData.value = list
+      const list = await fetchAdminMenuTree({ page: 1, limit: 1000 })
+      // 旧项目字段 childMenu => 这里用 children 展示
+      const transform = (items: AdminMenuItem[]): AppRouteRecord[] => {
+        return (items || []).map((item) => {
+          const node: any = {
+            id: item.id,
+            pid: item.pid,
+            name: item.name,
+            path: item.path,
+            meta: {
+              title: item.name,
+              // 根据 menuType 简单映射出类型
+              isAuthButton: item.menuType === 2
+            }
+          }
+          const children = item.childMenu || []
+          if (children.length) {
+            node.children = transform(children)
+          }
+          return node as AppRouteRecord
+        })
+      }
+
+      tableData.value = transform(list as AdminMenuItem[])
     } catch (error) {
       throw error instanceof Error ? error : new Error('获取菜单失败')
     } finally {
@@ -222,7 +233,7 @@
           }),
           h(ArtButtonTable, {
             type: 'delete',
-            onClick: () => handleDeleteMenu()
+            onClick: () => handleDeleteMenu(row)
           })
         ])
       }
@@ -231,23 +242,6 @@
 
   // 数据相关
   const tableData = ref<AppRouteRecord[]>([])
-
-  /**
-   * 重置搜索条件
-   */
-  const handleReset = (): void => {
-    Object.assign(formFilters, { ...initialSearchState })
-    Object.assign(appliedFilters, { ...initialSearchState })
-    getMenuList()
-  }
-
-  /**
-   * 执行搜索
-   */
-  const handleSearch = (): void => {
-    Object.assign(appliedFilters, { ...formFilters })
-    getMenuList()
-  }
 
   /**
    * 刷新菜单列表
@@ -355,9 +349,10 @@
    * 添加菜单
    */
   const handleAddMenu = (): void => {
+    // 新增时默认菜单类型为“菜单”，但允许在弹窗中切换为“按钮”
     dialogType.value = 'menu'
     editData.value = null
-    lockMenuType.value = true
+    lockMenuType.value = false
     dialogVisible.value = true
   }
 
@@ -365,7 +360,8 @@
    * 添加权限按钮
    */
   const handleAddAuth = (): void => {
-    dialogType.value = 'menu'
+    // 新增权限按钮：默认类型为“按钮”，字段与按钮保持一致
+    dialogType.value = 'button'
     editData.value = null
     lockMenuType.value = false
     dialogVisible.value = true
@@ -397,15 +393,17 @@
   }
 
   /**
-   * 菜单表单数据类型
+   * 菜单表单数据类型（对齐旧项目 MenuManagementEdit）
    */
   interface MenuFormData {
+    id?: number | ''
+    menuType: number // 1 菜单 2 按钮
+    pid?: number | ''
+    parentName?: string
     name: string
     path: string
-    component?: string
-    icon?: string
-    roles?: string[]
-    sort?: number
+    describes?: string
+    sort?: number | ''
     [key: string]: any
   }
 
@@ -413,22 +411,43 @@
    * 提交表单数据
    * @param formData 表单数据
    */
-  const handleSubmit = (formData: MenuFormData): void => {
-    console.log('提交数据:', formData)
-    // TODO: 调用API保存数据
-    getMenuList()
+  const handleSubmit = async (formData: MenuFormData): Promise<void> => {
+    // 对齐旧项目 MenuManagementEdit 的提交结构
+    const menuType = formData.menuType || (dialogType.value === 'button' ? 2 : 1)
+
+    const payload: any = {
+      id: formData.id || undefined,
+      pid: formData.pid ?? 0,
+      name: formData.name,
+      path: formData.path,
+      describes: formData.describes || '',
+      // 按钮在旧项目里没有排序字段，这里只对菜单传 sort
+      sort: menuType === 2 ? undefined : (formData.sort ?? 1),
+      menuType,
+      menu_type: menuType
+    }
+
+    await fetchAdminMenuSaveOrUpdate(payload)
+    await getMenuList()
   }
 
   /**
-   * 删除菜单
+   * 删除菜单（对齐旧项目：单行删除）
    */
-  const handleDeleteMenu = async (): Promise<void> => {
+  const handleDeleteMenu = async (row: AppRouteRecord): Promise<void> => {
+    if (!row?.id) {
+      ElMessage.error('未选中任何菜单')
+      return
+    }
+
     try {
-      await ElMessageBox.confirm('确定要删除该菜单吗？删除后无法恢复', '提示', {
+      await ElMessageBox.confirm('你确定要删除当前项吗？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       })
+
+      await fetchAdminMenuDelete({ id: row.id })
       ElMessage.success('删除成功')
       getMenuList()
     } catch (error) {

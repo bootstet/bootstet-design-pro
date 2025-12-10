@@ -38,7 +38,7 @@ export class MenuProcessor {
   private async processFrontendMenu(): Promise<AppRouteRecord[]> {
     const userStore = useUserStore()
     const roles = userStore.info?.roles
-
+    console.log('asyncRoutes', asyncRoutes)
     let menuList = [...asyncRoutes]
 
     // 根据角色过滤菜单
@@ -54,6 +54,7 @@ export class MenuProcessor {
    */
   private async processBackendMenu(): Promise<AppRouteRecord[]> {
     const list = await fetchGetMenuList()
+    console.log('fetched backend menu list:', list)
     return this.filterEmptyMenus(list)
   }
 
